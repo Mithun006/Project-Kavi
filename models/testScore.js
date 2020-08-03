@@ -8,14 +8,16 @@ const testScoreSchema = new Schema({
         testId: {type: mongoose.Schema.Types.ObjectId, ref: 'ATest'},
         score: Number,
         startTime: Date,
-        closeTime: Date}
-    ],
+        closeTime: Date,
+        maxMark: Number
+    }],
     cTest: [{
         testId: {type: mongoose.Schema.Types.ObjectId, ref: 'CTest'},
         score: Number,
         startTime: Date,
-        closeTime: Date}
-    ]
+        closeTime: Date,
+        maxMark: Number
+    }]
 })
 
 module.exports = mongoose.model("TestScore", testScoreSchema);

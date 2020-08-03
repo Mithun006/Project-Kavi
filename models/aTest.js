@@ -12,7 +12,7 @@ const aTestSchema = new Schema({
     averageScore: {type: Number, default: 0},
     leastScore: {type: Number, default: 99999},
 	duration: Number,
-	questions: [{type: mongoose.Schema.Types.ObjectId, ref: 'testQuestions',
+	questions: [{question: {type: mongoose.Schema.Types.ObjectId, ref: 'testQuestions'},
 				 mark: Number}]	
 })
 

@@ -1,6 +1,6 @@
 const express = require('express');
-const mongoose = require('mongoose');
 const multer = require('multer');
+const fs = require('fs')
 const checkAuth = require('../middleware/check-auth');
 
 const storage = multer.diskStorage({
@@ -8,7 +8,7 @@ const storage = multer.diskStorage({
         cb(null, './profileImages');
     },
     filename: function(req, file, cb){
-        cb(null, req.params.id + file.originalname)
+        cb(null, req.userData.userId + '.jpeg')
     }
 });
 
@@ -24,57 +24,80 @@ const fileFilter = (req, file, cb) => {
 
 const upload = multer({
     storage: storage, 
-    limits: {
+    /*limits: {
         fileSize: 1024 * 1024 * 5
-    },
+    },*/
     fileFilter: fileFilter
 });
 
 const routerStudentDashboard = express.Router();
 const Student = require('../models/student');
+const College = require('../models/college');
 
 
 //Get Student Profile from DB
 routerStudentDashboard.get('/profile', checkAuth, function(req,res,next){
-    Student.findById(req.userData.userId).then((studentProfile => {
-        res.status(200).json({
-        practicedQuestions: studentProfile.practicedQuestions,
-        firstName: studentProfile.firstName,
-        lastName: studentProfile.lastName,
-        mailId: studentProfile.mailId,
-        aTest: studentProfile.aTest,
-        cTest: studentProfile.cTest
-        });
-    }));
+    Student.findById(req.userData.userId, {firstName: 1, lastName: 1, mailId: 1, contact: 1, degree: 1, department: 1, graduatingYear: 1, collegeId: 1}).then(studentProfile => {
+        College.findById(studentProfile.collegeId).then(college => {
+            res.status(201).json({
+                studentProfile: studentProfile,
+                collegeName: college.collegeName
+            });
+            console.log(studentProfile);
+        });;
+    });
 });
 
 
 //Edit Student Profile from Student Collection
-routerStudentDashboard.put('/profile/:id', upload.single('profilePicture'), function(req, res, next){
-    Student.findByIdAndUpdate(req.params.id, req.body, function(err,studentProfile){
+routerStudentDashboard.put('/profileUpdate', checkAuth, function(req, res, next){
+    Student.findByIdAndUpdate(req.userData.userId, req.body, function(err,studentProfile){
         if(err) {
             res.status(503).json({
                 message: "Request failed. Please, Try again later!..."
             })
         }
         else{
-            Student.findById(req.params.id).then(studentProfile => {
-            res.status(201).json(studentProfile);
+            Student.findById(req.userData.userId, {firstName: 1, lastName: 1, mailId: 1, contact: 1, degree: 1, department: 1, graduatingYear: 1, collegeId: 1}).then(studentProfile => {
+                College.findById(studentProfile.collegeId).then(college => {
+                    res.status(201).json({
+                        studentProfile: studentProfile,
+                        collegeName: college.collegeName
+                    });
+                    console.log(studentProfile);
+                });
             })
-        }
+        };
     });
 });
 
 
-//Upload Profile Picture to the DB
-routerStudentDashboard.post('/profilePicture/:id', upload.single('profilePicture'), (req,res,next) => {
-    Student.findById(req.params.id).then((studentProfile => {
-        studentProfile.profilePicture= req.file.path;
+//Upload/Edit Student profilePicture
+routerStudentDashboard.put('/profilePictureUpdate', checkAuth, upload.single('profilePicture'), (req,res,next) =>{
+    Student.findByIdAndUpdate(req.userData.userId).then((studentProfile => {
+        studentProfile.profilePicture = req.file.path;
         studentProfile.save();
-        res.status(201).json('Profile picture uploaded successfully!...');
+        res.status(201).json('Profile picture updated successfully!...');
         console.log(req.file)
     }))
-}); 
+})
+
+//Remove student profilePicture
+routerStudentDashboard.delete('/profilePictureRemove', checkAuth, function(req,res,next){
+    Student.findById(req.userData.userId).then(studentProfile => {
+        fs.unlink(studentProfile.profilePicture, function(err){
+            if(err){
+                res.json('No profile picture exists')
+                console.log('No profile picture exists')
+            }
+            else{
+                res.json('Profile Picture removed successfully')
+                console.log('Profile Picture removed successfully')
+            }
+        })
+        studentProfile.profilePicture = ""
+    })
+})
 
 
 module.exports = routerStudentDashboard;

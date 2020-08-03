@@ -20,7 +20,7 @@ const StudentSchema = new Schema({
         type: String,
         required: [true, 'Password is required']
     },
-    contact: Number,
+    contact: {type: Number, unique: true},
     degree: String,
     department: String,
     graduatingYear: Date,
@@ -31,8 +31,10 @@ const StudentSchema = new Schema({
     practicedQuestions: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Practice' }],
     overallScore: {type: Number, default: 0},
     testScore: {type: mongoose.Schema.Types.ObjectId, ref: 'TestScore'},
-    progress: {type: mongoose.Schema.Types.ObjectId, ref: 'Progress'}
-})
+    progress: {type: mongoose.Schema.Types.ObjectId, ref: 'Progress'},
+    createdAt: Date
+});
+StudentSchema.index({createdAt: 1}, {expireAfterSeconds: 30*60, partialFilterExpression: {isVerified: false}});
 
 
 const Student = mongoose.model('Student',StudentSchema);
