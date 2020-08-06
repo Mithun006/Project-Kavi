@@ -39,7 +39,7 @@ routerTest.post('/newCTest', function(req,res,next){
 
 //get an specific aTest using ID from the ATest Collection (id: ATestId)
 routerTest.get('/getATest/:id', checkAuth, function(req,res,next){
-    ATest.findById(req.params.id).then((aTest => {
+    ATest.findById(req.params.id, {testName: 1, duration: 1, closeTime: 1, startTime: 1, maxMark: 1, questions: 1}).populate('questions.question').then((aTest => {
         console.log(aTest);
         res.status(200).json(aTest);
     }))
@@ -48,7 +48,7 @@ routerTest.get('/getATest/:id', checkAuth, function(req,res,next){
 
 //get an specific cTest using ID from the CTest Collection (id: CTestId)
 routerTest.get('/getCTest/:id', checkAuth, function(req,res,next){
-    CTest.findById(req.params.id).then((cTest => {
+    CTest.findById(req.params.id, {testName: 1, duration: 1, closeTime: 1, startTime: 1, maxMark: 1, questions: 1}).populate('questions.question').then((cTest => {
         console.log(cTest);
         res.status(200).json(cTest);
     }))
