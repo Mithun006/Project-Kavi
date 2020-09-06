@@ -31,8 +31,16 @@ app.use('/apiScoreUpdate', require('./routes/apiScoreUpdate'));
 app.use('/apiProgress', require('./routes/apiProgress'));
 app.use('/apiDevelopment', require('./routes/apiDevelopment'));
 app.use('/apiDocx', require('./routes/apiDocx'));
+app.use('/apiLeaderBoard', require('./routes/apiLeaderBoard'));
 
 //listen for request
-app.listen(process.env.port||4000,function(){
+app.use(express.static('portal-master'))
+app.listen(process.env.PORT||4000,function(){
     console.log('Now listening for requests');
 });
+
+app.use(function(req, res, next) {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept,Authorization");
+    next();
+  });
