@@ -20,7 +20,7 @@ routerLeader.get('/rankSheet/cTest', checkAuth, function(req,res,next){
         let rankSheet = new Array()
         studentsList.forEach(value =>{
             value.testScore.cTest.forEach(element => {
-                if(element.testId.equals(req.body.cTest)){
+                if(element.cTest.equals(req.body.cTest)){
                     rankSheet.push({
                         score: element.score,
                         studentId: value._id,
@@ -41,7 +41,7 @@ routerLeader.get('/rankSheet/aTest', checkAuth, function(req,res,next){
         let rankSheet = new Array()
         studentsList.forEach(value =>{
             value.testScore.aTest.forEach(element => {
-                if(element.testId.equals(req.body.aTest)){
+                if(element.aTest.equals(req.body.aTest)){
                     rankSheet.push({
                         score: element.score,
                         studentId: value._id,
