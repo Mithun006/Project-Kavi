@@ -3,7 +3,7 @@ const Schema = mongoose.Schema;
 
 // create Learn Schema & Models
 const LearnSchema = new Schema({
-    topic: {type: mongoose.Schema.Types.ObjectId, ref: "Topic"},
+    // topic: {type: mongoose.Schema.Types.ObjectId, ref: "Topic"},
     introduction: [ String ],
     keyPoints: {
         brief: String,
@@ -17,12 +17,12 @@ const LearnSchema = new Schema({
         }],
     },
     formula: [{
-        type: String,
+        typeValue: String,
         formula: String,
         explain: String
     }],
     explanation: [{
-        type: String,
+        typeValue: String,
         brief: String,
         formula: String,
         example: [{
