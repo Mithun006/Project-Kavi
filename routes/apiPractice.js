@@ -6,7 +6,6 @@ const checkAuth = require('../middleware/check-auth');
 const upload = require('../middleware/upload');
 const fs = require('fs');
 const Image = require('../models/image');
-const uploadFilesMiddleware = require('../middleware/upload');
 var solved = [];
 // var pQuestionsIds = [];
 // var unsolved = [];
@@ -51,12 +50,13 @@ routerPractice.post('/practiceQuestions',checkAuth, async function(req,res,next)
         await upload(req, res);
         const url = req.protocol + '://' + req.get('host');
         const imagePathArray = new Array();
-        const imageArrayCount = 2
+        const imageArrayCount = req.body.imageArrayCount 
         for(let i = 0; i < imageArrayCount; i++){
             await Image.create({image: url+ '/learnModuleImages/' + req.files[i].filename}).then(imageId => {            
                 imagePathArray.push(imageId._id)
             })
         }
+        console.log(imagePathArray)
         await Practice.create(req.body).then(practiceQuestions => {
             practiceQuestions.image = imagePathArray
             practiceQuestions.save();
@@ -84,7 +84,7 @@ routerPractice.get('/practice/:id', checkAuth, function(req,res,next){
 routerPractice.put('/:id', checkAuth, async function (req,res,next){
     await upload(req, res);
     console.log(req.files);
-    Practice.findByIdAndUpdate(req.params.id, req.body, function(err, practiceQuestion){
+    Practice.findByIdAndUpdate(req.params.id, req.body,  {}, function(err, practiceQuestion){
         if(err){
             console.log("Request failed. Please, Try again later!...")
             return res.status(503).json({
@@ -112,22 +112,22 @@ routerPractice.put('/:id', checkAuth, async function (req,res,next){
 routerPractice.delete('/:id', checkAuth, function(req,res,next){
     Practice.findById(req.params.id).populate('image').then(async (practiceQuestion) => {
         let removeFiles = req.body.removeFiles;
-        // await Image.findByIdAndRemove(removeFiles, function(err, docs){
-        //     if(err){
-        //         console.log(err)
-        //         return res.status(400).json(err)
-        //     }
-        // });
-        // const url = req.protocol + '://' + req.get('host') + '/';
-        // for(let i = 0; i < removeFiles.length; i++){
-        //     let path = practiceQuestion.image[i].image.split(url)
-        //     fs.unlink(path[1], function(err){
-        //         if(err){
-        //             console.log(err)
-        //             return res.status(400).json(err)
-        //         }
-        //     })
-        // }
+        await Image.findByIdAndRemove(removeFiles, function(err, docs){
+            if(err){
+                console.log(err)
+                return res.status(400).json(err)
+            }
+        });
+        const url = req.protocol + '://' + req.get('host') + '/';
+        for(let i = 0; i < removeFiles.length; i++){
+            let path = practiceQuestion.image[i].image.split(url)
+            fs.unlink(path[1], function(err){
+                if(err){
+                    console.log(err)
+                    return res.status(400).json(err)
+                }
+            })
+        }
         let imageArray = new Array()
         for(let i = 0; i < practiceQuestion.image.length; i++){
             removeFiles.forEach(element => {
@@ -139,9 +139,13 @@ routerPractice.delete('/:id', checkAuth, function(req,res,next){
                     imageArray.push(practiceQuestion.image[i]._id)
             });
         }
-        console.log(removeFiles)
-        console.log(imageArray)
-        practiceQuestion.image.pop();
+        practiceQuestion.image = imageArray;
+        practiceQuestion.save();
+        console.log(practiceQuestion)
+        res.status(201).json({
+            message: "Update successful",
+            practiceQuestion: practiceQuestion
+        })
     })
 })
 
