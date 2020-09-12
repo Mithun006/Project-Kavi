@@ -50,10 +50,12 @@ routerPractice.post('/practiceQuestions',checkAuth, async function(req,res,next)
         await upload(req, res);
         const url = req.protocol + '://' + req.get('host');
         const imagePathArray = new Array();
-        for(let i = 0; i < req.files.length; i++){
-            await Image.create({image: url+ '/learnModuleImages/' + req.files[i].filename}).then(imageId => {            
-                imagePathArray.push(imageId._id)
-            })
+        if(req.files != null){
+            for(let i = 0; i < req.files.length; i++){
+                await Image.create({image: url+ '/learnModuleImages/' + req.files[i].filename}).then(imageId => {            
+                    imagePathArray.push(imageId._id)
+                })
+            }
         }
         await Practice.create(req.body).then(practiceQuestions => {
             practiceQuestions.image = imagePathArray
@@ -81,8 +83,7 @@ routerPractice.get('/practice/:id', checkAuth, function(req,res,next){
 //Update Practice Questions based on ID from the DB //College or Admin
 routerPractice.put('/:id', checkAuth, async function (req,res,next){
     await upload(req, res);
-    console.log(req.files);
-    Practice.findByIdAndUpdate(req.params.id, req.body,  {}, function(err, practiceQuestion){
+    await Practice.findByIdAndUpdate(req.params.id, req.body, async function(err, practiceQuestion){
         if(err){
             console.log("Request failed. Please, Try again later!...")
             return res.status(503).json({
@@ -95,14 +96,21 @@ routerPractice.put('/:id', checkAuth, async function (req,res,next){
                 message: "Sorry... Resource not found!!!"
             })
         }
-        else{
-            Practice.findById(req.params.id).then((practiceQuestion) => {
-                practiceQuestions.solution.image.push(req.file.path)
-                practiceQuestions.save()
+        else if(req.files != null){
+            await Practice.findById(req.params.id).then(async (practiceQuestion) => {
+                const url = req.protocol + '://' + req.get('host');
+                for(let i = 0; i < req.files.length; i++){
+                    await Image.create({image: url+ '/learnModuleImages/' + req.files[i].filename}).then(imageId => {            
+                        practiceQuestion.image.push(imageId._id)
+                    })
+                }
+                practiceQuestion.save()
                 console.log(practiceQuestion)
-                res.status(201).json(practiceQuestion)
+                return res.status(201).json(practiceQuestion)
             })
         }
+        console.log(practiceQuestion)
+        res.status(201).json(practiceQuestion)
     });
 });
 
@@ -110,40 +118,46 @@ routerPractice.put('/:id', checkAuth, async function (req,res,next){
 routerPractice.delete('/:id', checkAuth, function(req,res,next){
     Practice.findById(req.params.id).populate('image').then(async (practiceQuestion) => {
         let removeFiles = req.body.removeFiles;
-        await Image.findByIdAndRemove(removeFiles, function(err, docs){
-            if(err){
-                console.log(err)
-                return res.status(400).json(err)
+        if(practiceQuestion === null){
+            console.log("Sorry... Resource not found!!!")
+            return res.status(404).json("Sorry... Resource not found!!!")
+        }
+        else{
+            const url = req.protocol + '://' + req.get('host') + '/';
+            for(let i = 0; i < removeFiles.length; i++){
+                let path = practiceQuestion.image[i].image.split(url)
+                fs.unlink(path[1], function(err){
+                    if(err){
+                        console.log(err)
+                        return res.status(400).json(err)
+                    }
+                })
             }
-        });
-        const url = req.protocol + '://' + req.get('host') + '/';
-        for(let i = 0; i < removeFiles.length; i++){
-            let path = practiceQuestion.image[i].image.split(url)
-            fs.unlink(path[1], function(err){
+            let imageArray = new Array()
+            for(let i = 0; i < practiceQuestion.image.length; i++){
+                removeFiles.forEach(element => {
+                    let count = 0;
+                    if(`${practiceQuestion.image[i]._id}` === element){
+                        count++
+                    }
+                    if(count === 0)
+                        imageArray.push(practiceQuestion.image[i]._id)
+                });
+            }
+            await Image.findByIdAndRemove(removeFiles, function(err, docs){
                 if(err){
                     console.log(err)
                     return res.status(400).json(err)
                 }
+            });
+            practiceQuestion.image = imageArray;
+            practiceQuestion.save();
+            console.log(practiceQuestion)
+            res.status(201).json({
+                message: "Update successful",
+                practiceQuestion: practiceQuestion
             })
         }
-        let imageArray = new Array()
-        for(let i = 0; i < practiceQuestion.image.length; i++){
-            removeFiles.forEach(element => {
-                let count = 0;
-                if(`${practiceQuestion.image[i]._id}` === element){
-                    count++
-                }
-                if(count === 0)
-                    imageArray.push(practiceQuestion.image[i]._id)
-            });
-        }
-        practiceQuestion.image = imageArray;
-        practiceQuestion.save();
-        console.log(practiceQuestion)
-        res.status(201).json({
-            message: "Update successful",
-            practiceQuestion: practiceQuestion
-        })
     })
 })
 
