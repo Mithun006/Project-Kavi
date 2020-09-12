@@ -44,19 +44,17 @@ routerPractice.get('/practice', checkAuth, function(req,res,next){
 });
 
 
-//Post Practice Questions to the DB //College or Admin (Require: imageCountArray)
+//Post Practice Questions to the DB //College or Admin 
 routerPractice.post('/practiceQuestions',checkAuth, async function(req,res,next){
     try{
         await upload(req, res);
         const url = req.protocol + '://' + req.get('host');
         const imagePathArray = new Array();
-        const imageArrayCount = req.body.imageArrayCount 
-        for(let i = 0; i < imageArrayCount; i++){
+        for(let i = 0; i < req.files.length; i++){
             await Image.create({image: url+ '/learnModuleImages/' + req.files[i].filename}).then(imageId => {            
                 imagePathArray.push(imageId._id)
             })
         }
-        console.log(imagePathArray)
         await Practice.create(req.body).then(practiceQuestions => {
             practiceQuestions.image = imagePathArray
             practiceQuestions.save();
