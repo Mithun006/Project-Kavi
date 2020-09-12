@@ -13,7 +13,9 @@ const PracticeSchema = new Schema({
     option3: String,
     option4: String,
     option5: String,
-    answer: String
+    answer: String,
+    solution: String,
+    image: [{type: mongoose.Schema.Types.ObjectId, ref: 'Image'}]
 })
 
 const Practice = mongoose.model('Practice', PracticeSchema);
