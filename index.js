@@ -1,6 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
+const path = require('path')
 
 
 // set up express app
@@ -19,6 +20,8 @@ mongoose.Promise = global.Promise;
 
 // use body-parser
 app.use(bodyParser.json());
+app.use('/profileImages', express.static(path.join('profileImages')));
+app.use('/learnModuleImages', express.static(path.join('learnModuleImages')));
 
 //initialize routes
 app.use('/apiRegister', require('./routes/apiRegister'));
@@ -32,9 +35,13 @@ app.use('/apiProgress', require('./routes/apiProgress'));
 app.use('/apiDevelopment', require('./routes/apiDevelopment'));
 app.use('/apiDocx', require('./routes/apiDocx'));
 app.use('/apiLeaderBoard', require('./routes/apiLeaderBoard'));
+app.use('/apiLearn', require('./routes/apiLearn'));
+
+
+
 
 //listen for request
-app.use(express.static('portal-master'))
+// app.use(express.static('portal-master'))
 app.listen(process.env.PORT||4000,function(){
     console.log('Now listening for requests');
 });
