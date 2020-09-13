@@ -3,6 +3,7 @@ const routerDocx = express.Router();
 const multer = require('multer');
 const fs = require('fs');
 const TestQuestions = require('../models/testQuestions');
+const { emitKeypressEvents } = require('readline');
 
 const storage = multer.diskStorage({
     destination: function(req, file, cb){
@@ -15,11 +16,11 @@ const storage = multer.diskStorage({
 
 const fileFilter = (req, file, cb) => {
     //reject a file
-    if(file.mimetype === 'application/msword' || file.mimetype === 'text/plain' || file.mimetype === 'application/vnd.ms-word.document.macroenabled.12' || file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || file.mimetype === 'application/json'){
+    if(file.mimetype === 'text/plain'){
         cb(null, true)
     }
     else{
-        cb('Upload FAILED...! Upload only MS Word/Text file', false)       
+        cb('Upload FAILED...! Upload only Plain text file (.txt)', false)       
     }
 };
 
@@ -34,7 +35,7 @@ routerDocx.post('/docx', upload.single('docx'), function(req,res,next){
     let filePath = req.file.path
     let data = fs.readFileSync(filePath, 'utf8')
     let topic = data.match(/Topic\:\s(.*)\r\n/m)
-    let matchAll = data.matchAll(/[0-9]\)\s(.*)\r\n[A-Z]\)(.*)\r\n[A-Z]\)(.*)\r\n[A-Z]\)(.*)\r\n[A-Z]\)(.*)\r\n[A-Z]\)(.*)\r\n(.*)\r\n/g)
+    let matchAll = data.matchAll(/[0-9]\)\s(.*)\r\n[A-Z]\)(.*)\r\n[A-Z]\)(.*)\r\n[A-Z]\)(.*)\r\n[A-Z]\)(.*)\r\nCorrect Option\:\s(.*)\r\n/g)
     matchAll = Array.from(matchAll)
     // let ques = matchAll[0]
     // console.log(ques[0])
@@ -43,6 +44,15 @@ routerDocx.post('/docx', upload.single('docx'), function(req,res,next){
     
         for(let i = 0; i < matchAll.length; i++){
         let ques = matchAll[i]
+        let ans = 0
+        if(ques[6] ==='A')
+            ans = 2
+        else if(ques[6] === 'B')
+            ans = 3
+        else if(ques[6] === 'C')
+            ans = 4
+        else if(ques[6] === 'D')
+            ans = 5
         var testQuestion =  new TestQuestions({
             topic: topic[1],
             question: ques[1],
@@ -50,8 +60,7 @@ routerDocx.post('/docx', upload.single('docx'), function(req,res,next){
             option2: ques[3],
             option3: ques[4],
             option4: ques[5],
-            option5: ques[6],
-            answer: ques[7]
+            answer: ques[ans]
         })
         quesArray.push(testQuestion)
     }
@@ -62,7 +71,6 @@ routerDocx.post('/docx', upload.single('docx'), function(req,res,next){
     })
     res.status(201).json({
         message: "Questions successfully saved to DB"})
-
 });
             
 module.exports = routerDocx
